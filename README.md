@@ -1,324 +1,397 @@
-# E-Commerce Order Management Platform
+# 🛒 E-Commerce Order Management Platform
 
-Event-driven **microservices backend** for managing the lifecycle of e-commerce orders, built with **Java, Spring Boot, Apache Kafka, Spring Security, and Spring AI**.
+![Java](https://img.shields.io/badge/Java-21-orange)
+![Spring Boot](https://img.shields.io/badge/SpringBoot-3.x-brightgreen)
+![Kafka](https://img.shields.io/badge/Apache-Kafka-black)
+![Docker](https://img.shields.io/badge/Docker-Containerized-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-The platform demonstrates modern backend engineering practices including **distributed systems, asynchronous messaging, fault-tolerant processing, JWT security, and AI-assisted observability**.
+An **event-driven microservices backend** for managing the lifecycle of e-commerce orders, built with **Java, Spring Boot, Apache Kafka, Spring Security, and Spring AI**.
+
+The platform demonstrates modern backend engineering practices including:
+
+* Distributed microservices architecture
+* Asynchronous messaging with Kafka
+* Fault-tolerant event processing
+* Secure APIs using JWT authentication
+* AI-assisted observability and operational insights
 
 ---
 
-# Architecture Overview
+# 🏗️ Architecture Overview
 
 The system follows an **event-driven microservices architecture** where services communicate asynchronously through Kafka events.
 
-Order workflows such as **order creation, inventory reservation, payment processing, and notifications** are coordinated through an event pipeline to ensure **scalability, resilience, and eventual consistency**.
+Order workflows such as **order creation, inventory reservation, payment processing, and notifications** are coordinated through an event pipeline to ensure:
 
-Key architectural characteristics:
+* Scalability
+* Resilience
+* Eventual consistency across distributed services
 
-• Domain-driven microservices
-• Event-driven communication using Kafka
-• Independent databases per service
-• Secure APIs with JWT authentication
-• Fault tolerance using retries and Dead Letter Queues
-• AI-powered operational insights
+### Key Architectural Principles
+
+* Domain-driven microservices
+* Event-driven communication using Kafka
+* Independent database per service
+* JWT-secured APIs
+* Retry mechanisms and Dead Letter Queues
+* AI-powered operational insights
 
 ---
 
-# Microservices
+# 🧩 Microservices
 
-### Auth Service
+| Service                      | Responsibility                               |
+| ---------------------------- | -------------------------------------------- |
+| **Auth Service**             | Authentication, JWT generation, RBAC         |
+| **Order Service**            | Order lifecycle management                   |
+| **Inventory Service**        | Product inventory validation and reservation |
+| **Payment Service**          | Payment processing                           |
+| **Notification Service**     | Customer notifications                       |
+| **AI Observability Service** | AI analysis of system failures               |
 
-Handles authentication and authorization.
+---
 
-Responsibilities
+## 🔐 Auth Service
 
-* User registration and login
+Handles **authentication and authorization**.
+
+**Responsibilities**
+
+* User registration
+* User login
 * JWT token generation
 * Role-based access control (RBAC)
 
-Main APIs
+**APIs**
 
+```http
 POST /auth/register
 POST /auth/login
+```
 
 ---
 
-### Order Service
+## 📦 Order Service
 
-Manages the lifecycle of orders.
+Manages the **order lifecycle**.
 
-Responsibilities
+**Responsibilities**
 
 * Create and track orders
 * Publish order events
 * Maintain order state
 
-Main APIs
+**APIs**
 
+```http
 POST /orders
 GET /orders/{id}
 GET /orders/user/{userId}
+```
 
-Published events
+**Published Events**
 
+```
 ORDER_CREATED
 ORDER_COMPLETED
 ORDER_FAILED
+```
 
 ---
 
-### Inventory Service
+## 📊 Inventory Service
 
-Manages product inventory and stock reservation.
+Handles **inventory validation and reservation**.
 
-Responsibilities
+**Responsibilities**
 
 * Validate product availability
 * Reserve inventory
 * Publish inventory events
 
-Consumed events
+**Consumed Events**
 
+```
 ORDER_CREATED
+```
 
-Published events
+**Published Events**
 
+```
 INVENTORY_RESERVED
 INVENTORY_FAILED
+```
 
 ---
 
-### Payment Service
+## 💳 Payment Service
 
-Processes payments for orders.
+Processes **order payments**.
 
-Responsibilities
+**Responsibilities**
 
-* Handle payment processing
-* Persist payment records
+* Payment processing
+* Payment record persistence
 * Publish payment events
 
-Consumed events
+**Consumed Events**
 
+```
 INVENTORY_RESERVED
+```
 
-Published events
+**Published Events**
 
+```
 PAYMENT_COMPLETED
 PAYMENT_FAILED
+```
 
 ---
 
-### Notification Service
+## 🔔 Notification Service
 
-Sends notifications to customers or internal systems.
+Handles **customer notifications**.
 
-Responsibilities
+**Responsibilities**
 
-* Order completion notifications
+* Order confirmation notifications
 * Payment failure alerts
-* Email / message integrations
+* Messaging integrations
 
-Consumed events
+**Consumed Events**
 
+```
 ORDER_COMPLETED
 PAYMENT_FAILED
+```
 
 ---
 
-### AI Observability Service
+## 🤖 AI Observability Service
 
-Provides **AI-assisted operational insights**.
+Provides **AI-assisted operational intelligence**.
 
-Responsibilities
+**Responsibilities**
 
-* Analyze failed events from Dead Letter Queues
+* Analyze events from Dead Letter Queues
 * Generate root-cause explanations
-* Convert natural language queries into analytics queries
+* Convert natural language queries into SQL/analytics queries
 
-Example features
+**Example APIs**
 
-AI explanation of payment failures
-AI-generated SQL queries for analytics
-Operational summaries for support teams
-
-Example API
-
+```http
 POST /ai/analyze-error
 POST /ai/query
+```
+
+Example AI Query
+
+```
+"Show failed payments today"
+```
+
+AI converts this into a SQL analytics query.
 
 ---
 
-# Event Flow
+# 🔄 Event Flow
 
-Example order processing flow:
+Example order processing pipeline:
 
-1. Order Service publishes **ORDER_CREATED**
-2. Inventory Service consumes event and validates stock
-3. Inventory Service publishes **INVENTORY_RESERVED**
-4. Payment Service processes payment
-5. Payment Service publishes **PAYMENT_COMPLETED**
-6. Order Service updates order status
-7. Notification Service sends confirmation
+```
+User creates order
+        │
+        ▼
+Order Service
+        │
+        ▼
+Publish ORDER_CREATED
+        │
+        ▼
+Inventory Service
+        │
+        ▼
+Publish INVENTORY_RESERVED
+        │
+        ▼
+Payment Service
+        │
+        ▼
+Publish PAYMENT_COMPLETED
+        │
+        ▼
+Order Service updates order
+        │
+        ▼
+Notification Service sends confirmation
+```
 
-Failure scenarios are routed to **Dead Letter Queues (DLQ)** for later analysis.
-
----
-
-# Technology Stack
-
-**Language**
-Java 21
-
-**Frameworks**
-Spring Boot
-Spring Security
-Spring AI
-
-**Messaging**
-Apache Kafka
-
-**Database**
-MySQL
-
-**Containerization**
-Docker
-Docker Compose
-
-**Observability**
-Micrometer
-Prometheus
-Grafana
-
-**Security**
-JWT Authentication
-Role-Based Access Control
+Failures are routed to **Dead Letter Queues (DLQ)** for analysis.
 
 ---
 
-# Repository Structure
+# 🧰 Technology Stack
 
-**ecommerce-order-management-platform**
-
-services
- auth-service
- order-service
- inventory-service
- payment-service
- notification-service
- ai-observability-service
-
-shared-libraries
- common-dto
- event-models
- security-utils
-
-infrastructure
- docker
- database
- kafka
-
-docs
- architecture.md
- event-flow.md
-
-scripts
- start-local.sh
- setup-topics.sh
+| Category         | Technology                      |
+| ---------------- | ------------------------------- |
+| Language         | Java 21                         |
+| Framework        | Spring Boot                     |
+| Messaging        | Apache Kafka                    |
+| Security         | Spring Security + JWT           |
+| Database         | MySQL                           |
+| AI Integration   | Spring AI                       |
+| Containerization | Docker                          |
+| Observability    | Micrometer, Prometheus, Grafana |
 
 ---
 
-# Running the Platform Locally
+# 📁 Repository Structure
 
-Prerequisites
+```
+ecommerce-order-management-platform
+│
+├── services
+│   ├── auth-service
+│   ├── order-service
+│   ├── inventory-service
+│   ├── payment-service
+│   ├── notification-service
+│   └── ai-observability-service
+│
+├── shared-libraries
+│   ├── common-dto
+│   ├── event-models
+│   └── security-utils
+│
+├── infrastructure
+│   ├── docker
+│   ├── database
+│   └── kafka
+│
+├── docs
+│   ├── architecture.md
+│   └── event-flow.md
+│
+├── scripts
+│   ├── start-local.sh
+│   └── setup-topics.sh
+```
 
-Java 21
-Docker
-Docker Compose
-Maven
+---
 
-Start infrastructure
+# 🚀 Running the Platform Locally
 
+### Prerequisites
+
+* Java 21
+* Maven
+* Docker
+* Docker Compose
+
+---
+
+### Start Infrastructure
+
+```bash
 docker-compose up -d
-
-Build services
-
-mvn clean install
-
-Run services
-
-mvn spring-boot:run
-
-Once running, services will be available locally through their configured ports.
+```
 
 ---
 
-# Kafka Topics
+### Build Services
 
+```bash
+mvn clean install
+```
+
+---
+
+### Run Services
+
+```bash
+mvn spring-boot:run
+```
+
+Once running, all services will be available locally via their configured ports.
+
+---
+
+# 📡 Kafka Topics
+
+```
 order-events
 inventory-events
 payment-events
 notification-events
 dlq-events
+```
 
-These topics enable asynchronous communication between services.
+These topics enable asynchronous communication across microservices.
 
 ---
 
-# Security
+# 🔐 Security
 
-The platform uses **JWT-based authentication** with role-based authorization.
+The platform uses **JWT-based authentication** with **role-based authorization**.
 
-Roles
+### Roles
 
+```
 ROLE_USER
 ROLE_ADMIN
 ROLE_SUPPORT
+```
 
-Protected endpoints require valid JWT tokens.
+Protected endpoints require a valid JWT token.
 
 ---
 
-# AI Capabilities
+# 🤖 AI Capabilities
 
-The AI service integrates with **Spring AI** to provide intelligent operational tooling.
+The **AI Observability Service** integrates with **Spring AI** to enhance operational intelligence.
 
-Features
+### Features
 
-AI analysis of failed events
-Root-cause explanations for incidents
-Natural language analytics queries
-Operational summaries for support teams
+* AI analysis of failed events
+* Root-cause explanations for incidents
+* Natural language analytics queries
+* Operational summaries for support teams
 
 Example
 
-User query
-
+```
+User Query:
 "Show failed payments today"
+```
 
-AI converts it to an SQL query executed on analytics data.
-
----
-
-# Future Enhancements
-
-Distributed tracing (OpenTelemetry)
-Kubernetes deployment
-Automated CI/CD pipelines
+AI generates and executes the appropriate SQL query.
 
 ---
 
-# Learning Goals
+# 🔮 Future Enhancements
 
-This project demonstrates practical experience with:
-
-Distributed microservices architecture
-Event-driven systems using Kafka
-Secure REST APIs with JWT
-Fault-tolerant messaging with DLQ
-AI integration into backend platforms
+* API Gateway
+* Distributed tracing with OpenTelemetry
+* Kubernetes deployment
+* Automated CI/CD pipelines
+* Advanced monitoring dashboards
 
 ---
 
-# License
+# 🎯 Learning Goals
+
+This project demonstrates hands-on experience with:
+
+* Distributed microservices architecture
+* Event-driven systems using Kafka
+* Secure REST APIs with JWT
+* Fault-tolerant messaging and DLQ
+* AI integration in backend platforms
+
+---
+
+# 📄 License
 
 MIT License
