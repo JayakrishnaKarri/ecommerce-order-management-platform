@@ -1,7 +1,7 @@
 # 🛒 E-Commerce Order Management Platform
 
 ![Java](https://img.shields.io/badge/Java-21-orange)
-![Spring Boot](https://img.shields.io/badge/SpringBoot-3.x-brightgreen)
+![Spring Boot](https://img.shields.io/badge/SpringBoot-4.x-brightgreen)
 ![Kafka](https://img.shields.io/badge/Apache-Kafka-black)
 ![Docker](https://img.shields.io/badge/Docker-Containerized-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
