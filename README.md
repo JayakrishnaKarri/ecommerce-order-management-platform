@@ -18,13 +18,13 @@
 
 <br/>
 
-[Getting Started](#-getting-started) •
-[Architecture](#-architecture) •
-[Services](#-microservices) •
-[API Reference](#-api-reference) •
-[Kafka Events](#-kafka-event-flow) •
-[AI Module](#-ai-observability-module) •
-[Security](#-security-model)
+[Getting Started](#getting-started) •
+[Architecture](#architecture) •
+[Services](#microservices) •
+[API Reference](#api-reference) •
+[Kafka Events](#kafka-event-flow) •
+[AI Module](#ai-observability-module) •
+[Security](#security-model)
 
 </div>
 
