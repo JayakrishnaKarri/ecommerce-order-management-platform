@@ -59,13 +59,13 @@ A production-grade, event-driven microservices backend for asynchronous order pr
 
 | Layer | Technology |
 |---|---|
-| Framework | Spring Boot 3.2, Spring Cloud Gateway |
+| Framework | Spring Boot 3.5, Spring Cloud Gateway |
 | Messaging | Apache Kafka 7.5 (Confluent) |
 | Security | Spring Security 6 + JWT (JJWT 0.11) |
-| AI | Spring AI 0.8 + OpenAI GPT-4o-mini |
-| Database | MySQL 8.0 (isolated schema per service) |
+| AI | Spring AI 1.0.3 + OpenAI GPT-4o-mini |
+| Database | MySQL 8.3 (isolated schema per service) |
 | Container | Docker + Docker Compose |
-| Build | Maven 3.9, Java 17 |
+| Build | Maven 3.9, Java 21 |
 
 ---
 
