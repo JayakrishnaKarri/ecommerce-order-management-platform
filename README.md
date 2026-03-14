@@ -1,397 +1,220 @@
 # 🛒 E-Commerce Order Management Platform
 
 ![Java](https://img.shields.io/badge/Java-21-orange)
-![Spring Boot](https://img.shields.io/badge/SpringBoot-4.x-brightgreen)
-![Kafka](https://img.shields.io/badge/Apache-Kafka-black)
-![Docker](https://img.shields.io/badge/Docker-Containerized-blue)
-![License](https://img.shields.io/badge/License-MIT-green)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-brightgreen)
+![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-black)
+![Spring AI](https://img.shields.io/badge/Spring%20AI-1.0.2-blue)
+![MySQL](https://img.shields.io/badge/MySQL-8.3.0-blue)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED)
 
-An **event-driven microservices backend** for managing the lifecycle of e-commerce orders, built with **Java, Spring Boot, Apache Kafka, Spring Security, and Spring AI**.
-
-The platform demonstrates modern backend engineering practices including:
-
-* Distributed microservices architecture
-* Asynchronous messaging with Kafka
-* Fault-tolerant event processing
-* Secure APIs using JWT authentication
-* AI-assisted observability and operational insights
+A production-grade, event-driven microservices backend for asynchronous order processing — built with **Spring Boot**, **Apache Kafka**, **Spring Security (JWT/RBAC)**, and **Spring AI** for intelligent DLQ failure analysis.
 
 ---
 
-# 🏗️ Architecture Overview
+## Architecture
 
-The system follows an **event-driven microservices architecture** where services communicate asynchronously through Kafka events.
+```
+                    ┌──────────────────────────────────────┐
+                    │         API GATEWAY  :8080           │
+                    │   JWT validation · Route filtering   │
+                    └────┬────┬────┬────┬────┬─────────────┘
+                         │    │    │    │    │
+          ┌──────────────┘    │    │    │    └──────────────┐
+          │                   │    │    │                    │
+   ┌──────▼──────┐  ┌─────────▼┐  │  ┌─▼────────┐  ┌──────▼───────┐
+   │    User     │  │  Order   │  │  │Inventory │  │   Payment    │
+   │  Service   │  │ Service  │  │  │ Service  │  │   Service    │
+   │   :8081    │  │  :8082   │  │  │  :8083   │  │    :8084     │
+   └─────────────┘  └────┬─────┘  │  └────┬─────┘  └──────┬───────┘
+                         │        │       │                  │
+              ┌──────────▼────────▼───────▼──────────────────▼──────┐
+              │                  APACHE KAFKA                        │
+              │  order.placed | inventory.response | payment.response│
+              │  order.status.update | *.DLT (Dead Letter Topics)    │
+              └──────────┬──────────────────────────┬────────────────┘
+                         │                          │
+            ┌────────────▼──────────┐  ┌────────────▼────────────────┐
+            │  Notification Service │  │  DLQ Intelligence Service   │
+            │        :8085          │  │          :8086               │
+            │   Order event alerts  │  │  Spring AI + GPT-4o-mini    │
+            └───────────────────────┘  │  Automated root-cause RCA   │
+                                       └─────────────────────────────┘
+```
 
-Order workflows such as **order creation, inventory reservation, payment processing, and notifications** are coordinated through an event pipeline to ensure:
+## Services
 
-* Scalability
-* Resilience
-* Eventual consistency across distributed services
-
-### Key Architectural Principles
-
-* Domain-driven microservices
-* Event-driven communication using Kafka
-* Independent database per service
-* JWT-secured APIs
-* Retry mechanisms and Dead Letter Queues
-* AI-powered operational insights
+| Service | Port | Responsibility |
+|---|---|---|
+| **api-gateway** | 8080 | JWT validation, route filtering, single entry point |
+| **user-service** | 8081 | Registration, login, JWT issuance, RBAC |
+| **order-service** | 8082 | Order CRUD, Kafka saga orchestrator |
+| **inventory-service** | 8083 | Stock management, inventory reservation |
+| **payment-service** | 8084 | Payment processing (pluggable gateway) |
+| **notification-service** | 8085 | Event-driven order status notifications |
+| **dlq-intelligence-service** | 8086 | AI-powered Dead Letter Queue analysis |
 
 ---
 
-# 🧩 Microservices
+## Tech Stack
 
-| Service                      | Responsibility                               |
-| ---------------------------- | -------------------------------------------- |
-| **Auth Service**             | Authentication, JWT generation, RBAC         |
-| **Order Service**            | Order lifecycle management                   |
-| **Inventory Service**        | Product inventory validation and reservation |
-| **Payment Service**          | Payment processing                           |
-| **Notification Service**     | Customer notifications                       |
-| **AI Observability Service** | AI analysis of system failures               |
-
----
-
-## 🔐 Auth Service
-
-Handles **authentication and authorization**.
-
-**Responsibilities**
-
-* User registration
-* User login
-* JWT token generation
-* Role-based access control (RBAC)
-
-**APIs**
-
-```http
-POST /auth/register
-POST /auth/login
-```
+| Layer | Technology |
+|---|---|
+| Framework | Spring Boot 3.2, Spring Cloud Gateway |
+| Messaging | Apache Kafka 7.5 (Confluent) |
+| Security | Spring Security 6 + JWT (JJWT 0.11) |
+| AI | Spring AI 0.8 + OpenAI GPT-4o-mini |
+| Database | MySQL 8.0 (isolated schema per service) |
+| Container | Docker + Docker Compose |
+| Build | Maven 3.9, Java 17 |
 
 ---
 
-## 📦 Order Service
+## Quick Start
 
-Manages the **order lifecycle**.
-
-**Responsibilities**
-
-* Create and track orders
-* Publish order events
-* Maintain order state
-
-**APIs**
-
-```http
-POST /orders
-GET /orders/{id}
-GET /orders/user/{userId}
-```
-
-**Published Events**
-
-```
-ORDER_CREATED
-ORDER_COMPLETED
-ORDER_FAILED
-```
-
----
-
-## 📊 Inventory Service
-
-Handles **inventory validation and reservation**.
-
-**Responsibilities**
-
-* Validate product availability
-* Reserve inventory
-* Publish inventory events
-
-**Consumed Events**
-
-```
-ORDER_CREATED
-```
-
-**Published Events**
-
-```
-INVENTORY_RESERVED
-INVENTORY_FAILED
-```
-
----
-
-## 💳 Payment Service
-
-Processes **order payments**.
-
-**Responsibilities**
-
-* Payment processing
-* Payment record persistence
-* Publish payment events
-
-**Consumed Events**
-
-```
-INVENTORY_RESERVED
-```
-
-**Published Events**
-
-```
-PAYMENT_COMPLETED
-PAYMENT_FAILED
-```
-
----
-
-## 🔔 Notification Service
-
-Handles **customer notifications**.
-
-**Responsibilities**
-
-* Order confirmation notifications
-* Payment failure alerts
-* Messaging integrations
-
-**Consumed Events**
-
-```
-ORDER_COMPLETED
-PAYMENT_FAILED
-```
-
----
-
-## 🤖 AI Observability Service
-
-Provides **AI-assisted operational intelligence**.
-
-**Responsibilities**
-
-* Analyze events from Dead Letter Queues
-* Generate root-cause explanations
-* Convert natural language queries into SQL/analytics queries
-
-**Example APIs**
-
-```http
-POST /ai/analyze-error
-POST /ai/query
-```
-
-Example AI Query
-
-```
-"Show failed payments today"
-```
-
-AI converts this into a SQL analytics query.
-
----
-
-# 🔄 Event Flow
-
-Example order processing pipeline:
-
-```
-User creates order
-        │
-        ▼
-Order Service
-        │
-        ▼
-Publish ORDER_CREATED
-        │
-        ▼
-Inventory Service
-        │
-        ▼
-Publish INVENTORY_RESERVED
-        │
-        ▼
-Payment Service
-        │
-        ▼
-Publish PAYMENT_COMPLETED
-        │
-        ▼
-Order Service updates order
-        │
-        ▼
-Notification Service sends confirmation
-```
-
-Failures are routed to **Dead Letter Queues (DLQ)** for analysis.
-
----
-
-# 🧰 Technology Stack
-
-| Category         | Technology                      |
-| ---------------- | ------------------------------- |
-| Language         | Java 21                         |
-| Framework        | Spring Boot                     |
-| Messaging        | Apache Kafka                    |
-| Security         | Spring Security + JWT           |
-| Database         | MySQL                           |
-| AI Integration   | Spring AI                       |
-| Containerization | Docker                          |
-| Observability    | Micrometer, Prometheus, Grafana |
-
----
-
-# 📁 Repository Structure
-
-```
-ecommerce-order-management-platform
-│
-├── services
-│   ├── auth-service
-│   ├── order-service
-│   ├── inventory-service
-│   ├── payment-service
-│   ├── notification-service
-│   └── ai-observability-service
-│
-├── shared-libraries
-│   ├── common-dto
-│   ├── event-models
-│   └── security-utils
-│
-├── infrastructure
-│   ├── docker
-│   ├── database
-│   └── kafka
-│
-├── docs
-│   ├── architecture.md
-│   └── event-flow.md
-│
-├── scripts
-│   ├── start-local.sh
-│   └── setup-topics.sh
-```
-
----
-
-# 🚀 Running the Platform Locally
-
-### Prerequisites
-
-* Java 21
-* Maven
-* Docker
-* Docker Compose
-
----
-
-### Start Infrastructure
-
+### Option A — Docker (no Java/Maven needed)
 ```bash
-docker-compose up -d
+git clone https://github.com/YOUR_USERNAME/orderflow.git
+cd orderflow
+
+cp .env.example .env
+# Edit .env and set OPENAI_API_KEY=sk-...
+
+./start.sh
 ```
 
----
-
-### Build Services
-
+### Option B — Local IDE (IntelliJ / VS Code)
 ```bash
-mvn clean install
+# 1. Start only infrastructure
+docker-compose up -d mysql zookeeper kafka kafka-ui
+
+# 2. Open project in IntelliJ → Load Maven Projects
+# 3. Run each Application.java in this order:
+#    UserServiceApplication      → :8081
+#    InventoryServiceApplication → :8083
+#    PaymentServiceApplication   → :8084
+#    NotificationServiceApplication → :8085
+#    OrderServiceApplication     → :8082
+#    DlqIntelligenceServiceApplication → :8086
+#    ApiGatewayApplication       → :8080
 ```
 
 ---
 
-### Run Services
+## API Usage
 
+### Register & Login
 ```bash
-mvn spring-boot:run
+# Register
+curl -X POST http://localhost:8080/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"john","email":"john@example.com","password":"Password123","role":"CUSTOMER"}'
+
+# Login → copy the accessToken
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"john","password":"Password123"}'
 ```
 
-Once running, all services will be available locally via their configured ports.
+### Add Inventory (ADMIN role)
+```bash
+curl -X POST http://localhost:8080/api/v1/inventory/products \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"sku":"PROD-001","name":"MacBook Pro","price":2499.99,"stockQuantity":50}'
+```
+
+### Place an Order
+```bash
+curl -X POST http://localhost:8080/api/v1/orders \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "items": [{"productId":1,"productName":"MacBook Pro","quantity":1,"unitPrice":2499.99}],
+    "shippingAddress": "123 Main St, Chennai"
+  }'
+```
+
+### View DLQ AI Analysis (ADMIN)
+```bash
+curl http://localhost:8080/api/v1/dlq \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+```
 
 ---
 
-# 📡 Kafka Topics
+## Kafka Event Flow
 
 ```
-order-events
-inventory-events
-payment-events
-notification-events
-dlq-events
-```
+Customer places order
+  └─► [order.placed]
+        ├─► inventory-service  →  [inventory.response]  →  order-service
+        ├─► payment-service    →  [payment.response]    →  order-service
+        └─► notification-service (order confirmation email)
 
-These topics enable asynchronous communication across microservices.
+order-service  →  [order.status.update]  →  notification-service
+
+On consumer failure (after 3 retries):
+  any-service  →  [topic.DLT]  →  dlq-intelligence-service (AI root-cause analysis)
+```
 
 ---
 
-# 🔐 Security
+## Roles & Permissions
 
-The platform uses **JWT-based authentication** with **role-based authorization**.
-
-### Roles
-
-```
-ROLE_USER
-ROLE_ADMIN
-ROLE_SUPPORT
-```
-
-Protected endpoints require a valid JWT token.
+| Role | Access |
+|---|---|
+| `CUSTOMER` | Place orders, view own orders and notifications |
+| `ADMIN` | All endpoints, DLQ analysis dashboard |
+| `INVENTORY_MANAGER` | Manage products and stock levels |
+| `PAYMENT_PROCESSOR` | View payment records |
 
 ---
 
-# 🤖 AI Capabilities
-
-The **AI Observability Service** integrates with **Spring AI** to enhance operational intelligence.
-
-### Features
-
-* AI analysis of failed events
-* Root-cause explanations for incidents
-* Natural language analytics queries
-* Operational summaries for support teams
-
-Example
+## Project Structure
 
 ```
-User Query:
-"Show failed payments today"
+orderflow/
+├── docker-compose.yml          # Full stack orchestration
+├── init-db.sql                 # Creates all 6 databases
+├── start.sh / stop.sh          # Convenience scripts
+├── .env.example                # Environment variable template
+├── api-gateway/                # Spring Cloud Gateway + JWT filter
+├── user-service/               # Auth, JWT issuance
+├── order-service/              # Saga orchestrator
+├── inventory-service/          # Stock reservation
+├── payment-service/            # Payment processing
+├── notification-service/       # Event-driven alerts
+└── dlq-intelligence-service/   # Spring AI failure analysis
 ```
 
-AI generates and executes the appropriate SQL query.
+---
+
+## Environment Variables
+
+| Variable | Description |
+|---|---|
+| `OPENAI_API_KEY` | OpenAI API key for DLQ AI analysis |
+| `MYSQL_ROOT_PASSWORD` | MySQL root password |
+| `MYSQL_USER` | MySQL application user |
+| `MYSQL_PASSWORD` | MySQL application password |
+| `JWT_SECRET` | Base64-encoded HS256 signing key |
+
+Generate a strong JWT secret:
+```bash
+openssl rand -base64 32 | tr -d '\n' | base64
+```
 
 ---
 
-# 🔮 Future Enhancements
+## Monitoring
 
-* API Gateway
-* Distributed tracing with OpenTelemetry
-* Kubernetes deployment
-* Automated CI/CD pipelines
-* Advanced monitoring dashboards
-
----
-
-# 🎯 Learning Goals
-
-This project demonstrates hands-on experience with:
-
-* Distributed microservices architecture
-* Event-driven systems using Kafka
-* Secure REST APIs with JWT
-* Fault-tolerant messaging and DLQ
-* AI integration in backend platforms
+| Tool | URL | Purpose |
+|---|---|---|
+| Kafka UI | http://localhost:8090 | Inspect topics, messages, consumer groups |
+| Actuator (per service) | http://localhost:808x/actuator/health | Service health |
 
 ---
 
-# 📄 License
+## License
 
-MIT License
+MIT
