@@ -2,7 +2,7 @@
 
 <img src="https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white"/>
 <img src="https://img.shields.io/badge/Spring_Boot-3.5.11-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white"/>
-<img src="https://img.shields.io/badge/Apache_Kafka-7.5-231F20?style=for-the-badge&logo=apache-kafka&logoColor=white"/>
+<img src="https://img.shields.io/badge/Apache_Kafka-4.1.1-231F20?style=for-the-badge&logo=apache-kafka&logoColor=white"/>
 <img src="https://img.shields.io/badge/Spring_AI-1.0.3-6DB33F?style=for-the-badge&logo=spring&logoColor=white"/>
 <img src="https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white"/>
 <img src="https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white"/>
@@ -48,15 +48,269 @@ The system is built around an **asynchronous Kafka saga** where services communi
 
 ## Architecture
 
-![OrderNexus System Architecture](docs/architecture.svg)
+<details open>
+<summary><strong>System architecture</strong></summary>
+<br/>
+
+<svg xmlns="http://www.w3.org/2000/svg" width="900" viewBox="0 0 900 860" style="background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+
+  <!-- Background -->
+  <rect width="900" height="860" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="450" y="36" text-anchor="middle" font-size="18" font-weight="600" fill="#111827">OrderNexus — System Architecture</text>
+  <text x="450" y="56" text-anchor="middle" font-size="12" fill="#6B7280">Event-driven microservices · Java 21 · Spring Boot 3.5 · Apache Kafka · Spring AI</text>
+
+  <!-- CLIENT -->
+  <rect x="360" y="76" width="180" height="44" rx="8" fill="#F3F4F6" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="450" y="102" text-anchor="middle" font-size="13" font-weight="600" fill="#374151">Client (REST / Swagger)</text>
+
+  <line x1="450" y1="120" x2="450" y2="144" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- API GATEWAY -->
+  <rect x="285" y="144" width="330" height="56" rx="8" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1"/>
+  <text x="450" y="167" text-anchor="middle" font-size="14" font-weight="600" fill="#4C1D95">API Gateway  :8080</text>
+  <text x="450" y="186" text-anchor="middle" font-size="11" fill="#6D28D9">Spring Cloud Gateway · JWT validation · route filtering</text>
+
+  <line x1="450" y1="200" x2="450" y2="224" stroke="#7C3AED" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- USER SERVICE -->
+  <rect x="285" y="224" width="330" height="56" rx="8" fill="#DBEAFE" stroke="#2563EB" stroke-width="1"/>
+  <text x="450" y="247" text-anchor="middle" font-size="14" font-weight="600" fill="#1E3A8A">User Service  :8081</text>
+  <text x="450" y="266" text-anchor="middle" font-size="11" fill="#1D4ED8">Registration · Login · JWT issuance · BCrypt · RBAC</text>
+
+  <line x1="450" y1="280" x2="450" y2="308" stroke="#2563EB" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- ORDER SERVICE -->
+  <rect x="285" y="308" width="330" height="56" rx="8" fill="#D1FAE5" stroke="#059669" stroke-width="1"/>
+  <text x="450" y="331" text-anchor="middle" font-size="14" font-weight="600" fill="#064E3B">Order Service  :8082</text>
+  <text x="450" y="350" text-anchor="middle" font-size="11" fill="#065F46">Order lifecycle · Kafka saga orchestrator</text>
+
+  <!-- Dashed lines FROM order-service to Kafka topics -->
+  <path d="M285 336 L120 336 L120 490" fill="none" stroke="#059669" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#garr)"/>
+  <path d="M450 364 L450 460" fill="none" stroke="#059669" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#garr)"/>
+  <path d="M615 336 L780 336 L780 490" fill="none" stroke="#059669" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#garr)"/>
+  <path d="M380 364 L200 364 L200 490" fill="none" stroke="#059669" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#garr)"/>
+
+  <!-- KAFKA BUS -->
+  <rect x="60" y="430" width="780" height="204" rx="12" fill="#F0FDF4" stroke="#16A34A" stroke-width="1" stroke-dasharray="6 3"/>
+  <text x="80" y="454" font-size="12" font-weight="600" fill="#15803D">Apache Kafka  —  message bus</text>
+
+  <!-- Topic pills -->
+  <rect x="80" y="464" width="170" height="34" rx="17" fill="#D1FAE5" stroke="#059669" stroke-width="1"/>
+  <text x="165" y="485" text-anchor="middle" font-size="12" font-weight="500" fill="#064E3B">order.placed</text>
+
+  <rect x="270" y="464" width="170" height="34" rx="17" fill="#D1FAE5" stroke="#059669" stroke-width="1"/>
+  <text x="355" y="485" text-anchor="middle" font-size="12" font-weight="500" fill="#064E3B">inventory.response</text>
+
+  <rect x="460" y="464" width="170" height="34" rx="17" fill="#D1FAE5" stroke="#059669" stroke-width="1"/>
+  <text x="545" y="485" text-anchor="middle" font-size="12" font-weight="500" fill="#064E3B">payment.response</text>
+
+  <rect x="650" y="464" width="170" height="34" rx="17" fill="#D1FAE5" stroke="#059669" stroke-width="1"/>
+  <text x="735" y="485" text-anchor="middle" font-size="12" font-weight="500" fill="#064E3B">order.status.update</text>
+
+  <rect x="200" y="564" width="140" height="34" rx="17" fill="#FEE2E2" stroke="#DC2626" stroke-width="1"/>
+  <text x="270" y="585" text-anchor="middle" font-size="12" font-weight="500" fill="#7F1D1D">order.placed.DLT</text>
+
+  <rect x="360" y="564" width="180" height="34" rx="17" fill="#FEE2E2" stroke="#DC2626" stroke-width="1"/>
+  <text x="450" y="585" text-anchor="middle" font-size="12" font-weight="500" fill="#7F1D1D">inventory.response.DLT</text>
+
+  <rect x="560" y="564" width="170" height="34" rx="17" fill="#FEE2E2" stroke="#DC2626" stroke-width="1"/>
+  <text x="645" y="585" text-anchor="middle" font-size="12" font-weight="500" fill="#7F1D1D">payment.response.DLT</text>
+
+  <text x="450" y="625" text-anchor="middle" font-size="11" fill="#6B7280">Dead Letter Topics — captured after 3 retries with exponential backoff</text>
+
+  <!-- Arrows from Kafka topics to downstream services -->
+  <line x1="165" y1="634" x2="165" y2="680" stroke="#059669" stroke-width="1" marker-end="url(#garr)"/>
+  <line x1="355" y1="634" x2="355" y2="680" stroke="#059669" stroke-width="1" marker-end="url(#garr)"/>
+  <line x1="545" y1="634" x2="545" y2="680" stroke="#059669" stroke-width="1" marker-end="url(#garr)"/>
+  <line x1="450" y1="634" x2="730" y2="680" stroke="#DC2626" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#rarr)"/>
+
+  <!-- DOWNSTREAM SERVICES -->
+  <rect x="75" y="680" width="180" height="56" rx="8" fill="#DBEAFE" stroke="#2563EB" stroke-width="1"/>
+  <text x="165" y="703" text-anchor="middle" font-size="13" font-weight="600" fill="#1E3A8A">Inventory Service</text>
+  <text x="165" y="720" text-anchor="middle" font-size="11" fill="#1D4ED8">Stock reservation · :8083</text>
+
+  <rect x="275" y="680" width="180" height="56" rx="8" fill="#DBEAFE" stroke="#2563EB" stroke-width="1"/>
+  <text x="365" y="703" text-anchor="middle" font-size="13" font-weight="600" fill="#1E3A8A">Notification Service</text>
+  <text x="365" y="720" text-anchor="middle" font-size="11" fill="#1D4ED8">Email · SMS alerts · :8085</text>
+
+  <rect x="465" y="680" width="180" height="56" rx="8" fill="#DBEAFE" stroke="#2563EB" stroke-width="1"/>
+  <text x="555" y="703" text-anchor="middle" font-size="13" font-weight="600" fill="#1E3A8A">Payment Service</text>
+  <text x="555" y="720" text-anchor="middle" font-size="11" fill="#1D4ED8">Charge · persist · :8084</text>
+
+  <rect x="660" y="680" width="200" height="56" rx="8" fill="#FEE2E2" stroke="#DC2626" stroke-width="1"/>
+  <text x="760" y="703" text-anchor="middle" font-size="13" font-weight="600" fill="#7F1D1D">DLQ Intelligence</text>
+  <text x="760" y="720" text-anchor="middle" font-size="11" fill="#B91C1C">Spring AI · GPT-4o-mini · :8086</text>
+
+  <!-- Database labels -->
+  <text x="165" y="750" text-anchor="middle" font-size="10" fill="#9CA3AF">inventorydb (MySQL)</text>
+  <text x="365" y="750" text-anchor="middle" font-size="10" fill="#9CA3AF">notificationdb (MySQL)</text>
+  <text x="555" y="750" text-anchor="middle" font-size="10" fill="#9CA3AF">paymentdb (MySQL)</text>
+  <text x="760" y="750" text-anchor="middle" font-size="10" fill="#9CA3AF">dlqdb (MySQL)</text>
+
+  <!-- Legend -->
+  <line x1="60" y1="790" x2="90" y2="790" stroke="#059669" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#garr)"/>
+  <text x="96" y="794" font-size="11" fill="#374151">Kafka event</text>
+  <line x1="180" y1="790" x2="210" y2="790" stroke="#374151" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="216" y="794" font-size="11" fill="#374151">HTTP / JWT</text>
+  <line x1="296" y1="790" x2="326" y2="790" stroke="#DC2626" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#rarr)"/>
+  <text x="332" y="794" font-size="11" fill="#374151">DLT failure path</text>
+  <rect x="430" y="783" width="12" height="12" rx="2" fill="#D1FAE5" stroke="#059669" stroke-width="1"/>
+  <text x="448" y="794" font-size="11" fill="#374151">service</text>
+  <rect x="498" y="783" width="12" height="12" rx="11" fill="#D1FAE5" stroke="#059669" stroke-width="1"/>
+  <text x="516" y="794" font-size="11" fill="#374151">Kafka topic</text>
+  <rect x="596" y="783" width="12" height="12" rx="2" fill="#FEE2E2" stroke="#DC2626" stroke-width="1"/>
+  <text x="614" y="794" font-size="11" fill="#374151">DLT / AI</text>
+
+  <!-- Defs -->
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#6B7280" stroke-width="1.5" stroke-linecap="round"/>
+    </marker>
+    <marker id="garr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#059669" stroke-width="1.5" stroke-linecap="round"/>
+    </marker>
+    <marker id="rarr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#DC2626" stroke-width="1.5" stroke-linecap="round"/>
+    </marker>
+  </defs>
+</svg>
+
+</details>
 
 The platform follows a layered architecture where all external traffic enters through the API Gateway, business logic lives in independent Spring Boot services, and all inter-service communication flows exclusively through Apache Kafka.
 
 <details>
-<summary>View Kafka event flow diagram</summary>
+<summary><strong>Kafka event flow</strong></summary>
 <br/>
 
-![Kafka Event Flow](docs/kafka-event-flow.svg)
+<svg xmlns="http://www.w3.org/2000/svg" width="900" viewBox="0 0 900 760" style="background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#6B7280" stroke-width="1.5" stroke-linecap="round"/>
+    </marker>
+    <marker id="garr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#059669" stroke-width="1.5" stroke-linecap="round"/>
+    </marker>
+    <marker id="rarr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#DC2626" stroke-width="1.5" stroke-linecap="round"/>
+    </marker>
+    <marker id="barr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#2563EB" stroke-width="1.5" stroke-linecap="round"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="760" fill="#ffffff"/>
+
+  <text x="450" y="36" text-anchor="middle" font-size="18" font-weight="600" fill="#111827">Kafka Event Flow — Order Processing Saga</text>
+  <text x="450" y="56" text-anchor="middle" font-size="12" fill="#6B7280">Choreography-based saga · no direct service-to-service HTTP calls</text>
+
+  <!-- STEP 1: Customer -->
+  <rect x="350" y="76" width="200" height="44" rx="8" fill="#F3F4F6" stroke="#D1D5DB" stroke-width="1"/>
+  <text x="450" y="102" text-anchor="middle" font-size="13" font-weight="600" fill="#374151">Customer places order</text>
+  <text x="450" y="115" text-anchor="middle" font-size="10" fill="#9CA3AF">POST /api/v1/orders</text>
+
+  <line x1="450" y1="120" x2="450" y2="144" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- STEP 2: Order Service -->
+  <rect x="310" y="144" width="280" height="52" rx="8" fill="#D1FAE5" stroke="#059669" stroke-width="1"/>
+  <text x="450" y="168" text-anchor="middle" font-size="13" font-weight="600" fill="#064E3B">Order Service  :8082</text>
+  <text x="450" y="184" text-anchor="middle" font-size="11" fill="#065F46">creates order · status = PENDING</text>
+
+  <line x1="450" y1="196" x2="450" y2="220" stroke="#059669" stroke-width="1.5" marker-end="url(#garr)"/>
+
+  <!-- EVENT 1: order.placed -->
+  <rect x="310" y="220" width="280" height="36" rx="18" fill="#D1FAE5" stroke="#059669" stroke-width="1.5"/>
+  <text x="450" y="243" text-anchor="middle" font-size="13" font-weight="600" fill="#064E3B">  order.placed</text>
+
+  <!-- Fan out to 3 consumers -->
+  <path d="M310 238 L130 238 L130 320" fill="none" stroke="#059669" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#garr)"/>
+  <path d="M450 256 L450 320" fill="none" stroke="#059669" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#garr)"/>
+  <path d="M590 238 L770 238 L770 320" fill="none" stroke="#059669" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#garr)"/>
+
+  <!-- 3 consumers -->
+  <rect x="40" y="320" width="180" height="52" rx="8" fill="#DBEAFE" stroke="#2563EB" stroke-width="1"/>
+  <text x="130" y="343" text-anchor="middle" font-size="13" font-weight="600" fill="#1E3A8A">Inventory Service</text>
+  <text x="130" y="359" text-anchor="middle" font-size="11" fill="#1D4ED8">reserves stock · :8083</text>
+
+  <rect x="360" y="320" width="180" height="52" rx="8" fill="#DBEAFE" stroke="#2563EB" stroke-width="1"/>
+  <text x="450" y="343" text-anchor="middle" font-size="13" font-weight="600" fill="#1E3A8A">Notification Service</text>
+  <text x="450" y="359" text-anchor="middle" font-size="11" fill="#1D4ED8">order confirmation · :8085</text>
+
+  <rect x="680" y="320" width="180" height="52" rx="8" fill="#DBEAFE" stroke="#2563EB" stroke-width="1"/>
+  <text x="770" y="343" text-anchor="middle" font-size="13" font-weight="600" fill="#1E3A8A">Payment Service</text>
+  <text x="770" y="359" text-anchor="middle" font-size="11" fill="#1D4ED8">charges customer · :8084</text>
+
+  <!-- Events from inventory and payment -->
+  <line x1="130" y1="372" x2="130" y2="396" stroke="#059669" stroke-width="1.5" marker-end="url(#garr)"/>
+  <line x1="770" y1="372" x2="770" y2="396" stroke="#059669" stroke-width="1.5" marker-end="url(#garr)"/>
+
+  <rect x="40" y="396" width="180" height="36" rx="18" fill="#D1FAE5" stroke="#059669" stroke-width="1.5"/>
+  <text x="130" y="419" text-anchor="middle" font-size="12" font-weight="500" fill="#064E3B">inventory.response</text>
+
+  <rect x="680" y="396" width="180" height="36" rx="18" fill="#D1FAE5" stroke="#059669" stroke-width="1.5"/>
+  <text x="770" y="419" text-anchor="middle" font-size="12" font-weight="500" fill="#064E3B">payment.response</text>
+
+  <!-- Both responses converge to Order Service -->
+  <path d="M130 432 L130 476 L310 476" fill="none" stroke="#059669" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#garr)"/>
+  <path d="M770 432 L770 476 L590 476" fill="none" stroke="#059669" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#garr)"/>
+
+  <rect x="310" y="456" width="280" height="52" rx="8" fill="#D1FAE5" stroke="#059669" stroke-width="1"/>
+  <text x="450" y="479" text-anchor="middle" font-size="13" font-weight="600" fill="#064E3B">Order Service  :8082</text>
+  <text x="450" y="495" text-anchor="middle" font-size="11" fill="#065F46">updates status → PROCESSING</text>
+
+  <line x1="450" y1="508" x2="450" y2="532" stroke="#059669" stroke-width="1.5" marker-end="url(#garr)"/>
+
+  <!-- order.status.update -->
+  <rect x="300" y="532" width="300" height="36" rx="18" fill="#D1FAE5" stroke="#059669" stroke-width="1.5"/>
+  <text x="450" y="555" text-anchor="middle" font-size="13" font-weight="600" fill="#064E3B">order.status.update</text>
+
+  <line x1="450" y1="568" x2="450" y2="592" stroke="#059669" stroke-width="1.5" marker-end="url(#garr)"/>
+
+  <!-- Notification Service final alert -->
+  <rect x="360" y="592" width="180" height="52" rx="8" fill="#DBEAFE" stroke="#2563EB" stroke-width="1"/>
+  <text x="450" y="615" text-anchor="middle" font-size="13" font-weight="600" fill="#1E3A8A">Notification Service</text>
+  <text x="450" y="631" text-anchor="middle" font-size="11" fill="#1D4ED8">status change alert</text>
+
+  <!-- DLT failure path -->
+  <path d="M220 390 L220 660 L310 660" fill="none" stroke="#DC2626" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#rarr)"/>
+  <text x="170" y="528" text-anchor="middle" font-size="11" fill="#DC2626">on failure</text>
+  <text x="170" y="543" text-anchor="middle" font-size="11" fill="#DC2626">(after 3 retries)</text>
+
+  <rect x="310" y="636" width="280" height="52" rx="8" fill="#FEE2E2" stroke="#DC2626" stroke-width="1.5"/>
+  <text x="450" y="659" text-anchor="middle" font-size="13" font-weight="600" fill="#7F1D1D">DLQ Intelligence Service</text>
+  <text x="450" y="675" text-anchor="middle" font-size="11" fill="#B91C1C">Spring AI · root-cause analysis · :8086</text>
+
+  <!-- Step numbers -->
+  <circle cx="450" cy="88" r="10" fill="#6B7280"/>
+  <text x="450" y="92" text-anchor="middle" font-size="10" font-weight="600" fill="#ffffff">1</text>
+
+  <circle cx="450" cy="160" r="10" fill="#059669"/>
+  <text x="450" y="164" text-anchor="middle" font-size="10" font-weight="600" fill="#ffffff">2</text>
+
+  <circle cx="130" cy="336" r="10" fill="#2563EB"/>
+  <text x="130" y="340" text-anchor="middle" font-size="10" font-weight="600" fill="#ffffff">3</text>
+
+  <circle cx="770" cy="336" r="10" fill="#2563EB"/>
+  <text x="770" y="340" text-anchor="middle" font-size="10" font-weight="600" fill="#ffffff">4</text>
+
+  <circle cx="450" cy="472" r="10" fill="#059669"/>
+  <text x="450" y="476" text-anchor="middle" font-size="10" font-weight="600" fill="#ffffff">5</text>
+
+  <circle cx="450" cy="608" r="10" fill="#2563EB"/>
+  <text x="450" y="612" text-anchor="middle" font-size="10" font-weight="600" fill="#ffffff">6</text>
+
+  <!-- Legend -->
+  <line x1="60" y1="730" x2="90" y2="730" stroke="#059669" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#garr)"/>
+  <text x="96" y="734" font-size="11" fill="#374151">Kafka event</text>
+  <line x1="180" y1="730" x2="210" y2="730" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="216" y="734" font-size="11" fill="#374151">HTTP call</text>
+  <line x1="290" y1="730" x2="320" y2="730" stroke="#DC2626" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#rarr)"/>
+  <text x="326" y="734" font-size="11" fill="#374151">DLT failure path (after retries)</text>
+
+</svg>
 
 </details>
 
