@@ -1,41 +1,17 @@
 # 🛒 E-Commerce Order Management Platform
 
-<p align="center">
+![Java](https://img.shields.io/badge/Java-21-orange)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-brightgreen)
+![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-black)
+![Spring AI](https://img.shields.io/badge/Spring%20AI-1.0.2-blue)
+![MySQL](https://img.shields.io/badge/MySQL-8.3.0-blue)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED)
 
-![Java](https://img.shields.io/badge/Java-21-orange?style=for-the-badge\&logo=openjdk)
-![Spring Boot](https://img.shields.io/badge/SpringBoot-3.x-6DB33F?style=for-the-badge\&logo=springboot)
-![Apache Kafka](https://img.shields.io/badge/ApacheKafka-000000?style=for-the-badge\&logo=apachekafka)
-![Spring Security](https://img.shields.io/badge/SpringSecurity-JWT-green?style=for-the-badge)
-![Spring AI](https://img.shields.io/badge/SpringAI-LLM-blue?style=for-the-badge)
-![MySQL](https://img.shields.io/badge/MySQL-8.x-00758F?style=for-the-badge\&logo=mysql)
-![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge\&logo=docker)
-
-</p>
-
-<p align="center">
-Production-grade <b>event-driven microservices backend</b> for asynchronous order processing  
-built using <b>Spring Boot, Apache Kafka, Spring Security (JWT/RBAC)</b>, and <b>Spring AI</b> for intelligent DLQ failure analysis.
-</p>
+A production-grade, event-driven microservices backend for asynchronous order processing — built with **Spring Boot**, **Apache Kafka**, **Spring Security (JWT/RBAC)**, and **Spring AI** for intelligent DLQ failure analysis.
 
 ---
 
-# 📚 Table of Contents
-
-* Architecture
-* Services
-* Technology Stack
-* Quick Start
-* API Usage
-* Kafka Event Flow
-* Roles & Permissions
-* Project Structure
-* Environment Variables
-* Monitoring
-* License
-
----
-
-# 🏗 Architecture
+## Architecture
 
 ```
                     ┌──────────────────────────────────────┐
@@ -46,9 +22,9 @@ built using <b>Spring Boot, Apache Kafka, Spring Security (JWT/RBAC)</b>, and <b
           ┌──────────────┘    │    │    │    └──────────────┐
           │                   │    │    │                    │
    ┌──────▼──────┐  ┌─────────▼┐  │  ┌─▼────────┐  ┌──────▼───────┐
-   │  User       │  │  Order   │  │  │Inventory │  │   Payment    │
-   │  Service    │  │ Service  │  │  │ Service  │  │   Service    │
-   │   :8081     │  │  :8082   │  │  │  :8083   │  │    :8084     │
+   │    User     │  │  Order   │  │  │Inventory │  │   Payment    │
+   │  Service   │  │ Service  │  │  │ Service  │  │   Service    │
+   │   :8081    │  │  :8082   │  │  │  :8083   │  │    :8084     │
    └─────────────┘  └────┬─────┘  │  └────┬─────┘  └──────┬───────┘
                          │        │       │                  │
               ┌──────────▼────────▼───────▼──────────────────▼──────┐
@@ -58,208 +34,187 @@ built using <b>Spring Boot, Apache Kafka, Spring Security (JWT/RBAC)</b>, and <b
               └──────────┬──────────────────────────┬────────────────┘
                          │                          │
             ┌────────────▼──────────┐  ┌────────────▼────────────────┐
-            │ Notification Service  │  │ DLQ Intelligence Service    │
-            │        :8085          │  │        :8086                 │
-            │ Event driven alerts   │  │ Spring AI + GPT analysis    │
-            └───────────────────────┘  │ Automated root cause RCA    │
+            │  Notification Service │  │  DLQ Intelligence Service   │
+            │        :8085          │  │          :8086               │
+            │   Order event alerts  │  │  Spring AI + GPT-4o-mini    │
+            └───────────────────────┘  │  Automated root-cause RCA   │
                                        └─────────────────────────────┘
 ```
 
----
+## Services
 
-# 🧩 Services
-
-| Service                      | Port | Responsibility                              |
-| ---------------------------- | ---- | ------------------------------------------- |
-| **api-gateway**              | 8080 | Single entry point, JWT validation, routing |
-| **user-service**             | 8081 | User registration, login, JWT generation    |
-| **order-service**            | 8082 | Order orchestration and saga management     |
-| **inventory-service**        | 8083 | Product inventory management                |
-| **payment-service**          | 8084 | Payment processing                          |
-| **notification-service**     | 8085 | Event-driven order notifications            |
-| **dlq-intelligence-service** | 8086 | AI-based failure analysis                   |
+| Service | Port | Responsibility |
+|---|---|---|
+| **api-gateway** | 8080 | JWT validation, route filtering, single entry point |
+| **user-service** | 8081 | Registration, login, JWT issuance, RBAC |
+| **order-service** | 8082 | Order CRUD, Kafka saga orchestrator |
+| **inventory-service** | 8083 | Stock management, inventory reservation |
+| **payment-service** | 8084 | Payment processing (pluggable gateway) |
+| **notification-service** | 8085 | Event-driven order status notifications |
+| **dlq-intelligence-service** | 8086 | AI-powered Dead Letter Queue analysis |
 
 ---
 
-# ⚙️ Technology Stack
+## Tech Stack
 
-| Layer                | Technology                            |
-| -------------------- | ------------------------------------- |
-| **Framework**        | Spring Boot 3.x, Spring Cloud Gateway |
-| **Messaging**        | Apache Kafka                          |
-| **Security**         | Spring Security + JWT                 |
-| **AI Integration**   | Spring AI + OpenAI                    |
-| **Database**         | MySQL (schema per service)            |
-| **Containerization** | Docker & Docker Compose               |
-| **Build Tool**       | Maven                                 |
-| **Language**         | Java 17                               |
+| Layer | Technology |
+|---|---|
+| Framework | Spring Boot 3.2, Spring Cloud Gateway |
+| Messaging | Apache Kafka 7.5 (Confluent) |
+| Security | Spring Security 6 + JWT (JJWT 0.11) |
+| AI | Spring AI 0.8 + OpenAI GPT-4o-mini |
+| Database | MySQL 8.0 (isolated schema per service) |
+| Container | Docker + Docker Compose |
+| Build | Maven 3.9, Java 17 |
 
 ---
 
-# 🚀 Quick Start
+## Quick Start
 
-## Option 1 — Docker (Recommended)
-
-Run the full platform with Docker.
-
+### Option A — Docker (no Java/Maven needed)
 ```bash
 git clone https://github.com/YOUR_USERNAME/orderflow.git
 cd orderflow
 
 cp .env.example .env
+# Edit .env and set OPENAI_API_KEY=sk-...
 
-# set OPENAI_API_KEY in .env
 ./start.sh
 ```
 
----
-
-## Option 2 — Run Services Locally
-
-Start infrastructure first.
-
+### Option B — Local IDE (IntelliJ / VS Code)
 ```bash
+# 1. Start only infrastructure
 docker-compose up -d mysql zookeeper kafka kafka-ui
-```
 
-Run services in this order:
-
-```
-UserServiceApplication
-InventoryServiceApplication
-PaymentServiceApplication
-NotificationServiceApplication
-OrderServiceApplication
-DlqIntelligenceServiceApplication
-ApiGatewayApplication
+# 2. Open project in IntelliJ → Load Maven Projects
+# 3. Run each Application.java in this order:
+#    UserServiceApplication      → :8081
+#    InventoryServiceApplication → :8083
+#    PaymentServiceApplication   → :8084
+#    NotificationServiceApplication → :8085
+#    OrderServiceApplication     → :8082
+#    DlqIntelligenceServiceApplication → :8086
+#    ApiGatewayApplication       → :8080
 ```
 
 ---
 
-# 📡 API Usage
+## API Usage
 
-## Register User
-
+### Register & Login
 ```bash
+# Register
 curl -X POST http://localhost:8080/api/v1/auth/register \
--H "Content-Type: application/json" \
--d '{"username":"john","email":"john@example.com","password":"Password123","role":"CUSTOMER"}'
-```
+  -H "Content-Type: application/json" \
+  -d '{"username":"john","email":"john@example.com","password":"Password123","role":"CUSTOMER"}'
 
----
-
-## Login
-
-```bash
+# Login → copy the accessToken
 curl -X POST http://localhost:8080/api/v1/auth/login \
--H "Content-Type: application/json" \
--d '{"username":"john","password":"Password123"}'
+  -H "Content-Type: application/json" \
+  -d '{"username":"john","password":"Password123"}'
 ```
 
-Copy the returned `accessToken`.
-
----
-
-## Add Inventory
-
+### Add Inventory (ADMIN role)
 ```bash
 curl -X POST http://localhost:8080/api/v1/inventory/products \
--H "Authorization: Bearer $TOKEN" \
--H "Content-Type: application/json" \
--d '{"sku":"PROD-001","name":"MacBook Pro","price":2499.99,"stockQuantity":50}'
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"sku":"PROD-001","name":"MacBook Pro","price":2499.99,"stockQuantity":50}'
 ```
 
----
-
-## Place Order
-
+### Place an Order
 ```bash
 curl -X POST http://localhost:8080/api/v1/orders \
--H "Authorization: Bearer $TOKEN" \
--H "Content-Type: application/json"
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "items": [{"productId":1,"productName":"MacBook Pro","quantity":1,"unitPrice":2499.99}],
+    "shippingAddress": "123 Main St, Chennai"
+  }'
+```
+
+### View DLQ AI Analysis (ADMIN)
+```bash
+curl http://localhost:8080/api/v1/dlq \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
 ```
 
 ---
 
-# 🔄 Kafka Event Flow
+## Kafka Event Flow
 
 ```
 Customer places order
-      │
-      ▼
-[order.placed]
-      │
-      ├── inventory-service → inventory.response
-      ├── payment-service   → payment.response
-      └── notification-service
+  └─► [order.placed]
+        ├─► inventory-service  →  [inventory.response]  →  order-service
+        ├─► payment-service    →  [payment.response]    →  order-service
+        └─► notification-service (order confirmation email)
 
-order-service → order.status.update
+order-service  →  [order.status.update]  →  notification-service
 
-On failure:
-service → topic.DLT → dlq-intelligence-service
+On consumer failure (after 3 retries):
+  any-service  →  [topic.DLT]  →  dlq-intelligence-service (AI root-cause analysis)
 ```
 
 ---
 
-# 🔐 Roles & Permissions
+## Roles & Permissions
 
-| Role                  | Access                    |
-| --------------------- | ------------------------- |
-| **CUSTOMER**          | Place orders, view orders |
-| **ADMIN**             | Access all endpoints      |
-| **INVENTORY_MANAGER** | Manage products           |
-| **PAYMENT_PROCESSOR** | Payment operations        |
+| Role | Access |
+|---|---|
+| `CUSTOMER` | Place orders, view own orders and notifications |
+| `ADMIN` | All endpoints, DLQ analysis dashboard |
+| `INVENTORY_MANAGER` | Manage products and stock levels |
+| `PAYMENT_PROCESSOR` | View payment records |
 
 ---
 
-# 📂 Project Structure
+## Project Structure
 
 ```
-orderflow
-│
-├── docker-compose.yml
-├── init-db.sql
-├── start.sh / stop.sh
-├── .env.example
-│
-├── api-gateway
-├── user-service
-├── order-service
-├── inventory-service
-├── payment-service
-├── notification-service
-└── dlq-intelligence-service
+orderflow/
+├── docker-compose.yml          # Full stack orchestration
+├── init-db.sql                 # Creates all 6 databases
+├── start.sh / stop.sh          # Convenience scripts
+├── .env.example                # Environment variable template
+├── api-gateway/                # Spring Cloud Gateway + JWT filter
+├── user-service/               # Auth, JWT issuance
+├── order-service/              # Saga orchestrator
+├── inventory-service/          # Stock reservation
+├── payment-service/            # Payment processing
+├── notification-service/       # Event-driven alerts
+└── dlq-intelligence-service/   # Spring AI failure analysis
 ```
 
 ---
 
-# ⚙️ Environment Variables
+## Environment Variables
 
-| Variable            | Description            |
-| ------------------- | ---------------------- |
-| OPENAI_API_KEY      | OpenAI API key         |
-| MYSQL_ROOT_PASSWORD | MySQL root password    |
-| MYSQL_USER          | MySQL application user |
-| MYSQL_PASSWORD      | MySQL password         |
-| JWT_SECRET          | Base64 JWT signing key |
+| Variable | Description |
+|---|---|
+| `OPENAI_API_KEY` | OpenAI API key for DLQ AI analysis |
+| `MYSQL_ROOT_PASSWORD` | MySQL root password |
+| `MYSQL_USER` | MySQL application user |
+| `MYSQL_PASSWORD` | MySQL application password |
+| `JWT_SECRET` | Base64-encoded HS256 signing key |
 
-Generate JWT secret:
-
+Generate a strong JWT secret:
 ```bash
-openssl rand -base64 32
+openssl rand -base64 32 | tr -d '\n' | base64
 ```
 
 ---
 
-# 📊 Monitoring
+## Monitoring
 
-| Tool            | URL                                                                            |
-| --------------- | ------------------------------------------------------------------------------ |
-| Kafka UI        | http://localhost:8090                                                          |
-| Spring Actuator | [http://localhost:808x/actuator/health](http://localhost:808x/actuator/health) |
+| Tool | URL | Purpose |
+|---|---|---|
+| Kafka UI | http://localhost:8090 | Inspect topics, messages, consumer groups |
+| Actuator (per service) | http://localhost:808x/actuator/health | Service health |
 
 ---
 
-# 📜 License
+## License
 
 MIT
