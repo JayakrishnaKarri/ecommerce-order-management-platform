@@ -10,11 +10,11 @@
 <br/>
 <br/>
 
-# OrderFlow — Event-Driven Microservices Platform
+# OrderNexus
 
-### A production-grade backend for asynchronous e-commerce order processing
+### E-Commerce Order Management Platform
 
-*Built with Spring Boot · Apache Kafka · Spring Security JWT · Spring AI*
+*A production-grade event-driven microservices backend built with Spring Boot · Apache Kafka · Spring Security JWT · Spring AI*
 
 <br/>
 
@@ -32,51 +32,33 @@
 
 ## Overview
 
-OrderFlow is a **fully event-driven microservices platform** that demonstrates modern backend engineering practices across the complete lifecycle of an e-commerce order — from placement through inventory reservation, payment processing, customer notification, and AI-assisted failure analysis.
+OrderNexus is a **fully event-driven microservices platform** that demonstrates modern backend engineering practices across the complete lifecycle of an e-commerce order — from placement through inventory reservation, payment processing, customer notification, and AI-assisted failure analysis.
 
 The system is built around an **asynchronous Kafka saga** where services communicate exclusively through domain events, with no direct HTTP calls between services. This ensures each service is fully decoupled, independently deployable, and resilient to partial failures.
 
-```
-Key design goals
-─────────────────────────────────────────────────────────────
- Loose coupling      →  Services communicate via Kafka events only
- Fault tolerance     →  Retry + Dead Letter Topics on every consumer
- Observability       →  Spring AI analyzes every failed Kafka message
- Security            →  JWT authentication + role-based authorization
- Scalability         →  Virtual Threads + stateless services
-```
+| Design Goal | Implementation |
+|---|---|
+| Loose coupling | Services communicate via Kafka events only — zero inter-service HTTP |
+| Fault tolerance | `@RetryableTopic` with exponential backoff + Dead Letter Topics on every consumer |
+| Observability | Spring AI analyzes every failed Kafka message automatically |
+| Security | JWT authentication + role-based authorization on every endpoint |
+| Scalability | Java 21 Virtual Threads + stateless services |
 
 ---
 
 ## Architecture
 
-```
-                         ┌──────────────────────────────────────────────────┐
-                         │              API GATEWAY  :8080                  │
-                         │     JWT validation  ·  Route filtering           │
-                         └──────┬───────┬──────┬──────┬──────┬─────────────┘
-                                │       │      │      │      │
-            ┌───────────────────┘  ┌────┘      │      └──┐   └───────────────┐
-            │                      │           │          │                   │
-   ┌────────▼────────┐  ┌──────────▼──┐  ┌────▼──────┐  │  ┌────────────────▼──┐
-   │  User Service   │  │Order Service│  │ Inventory │  │  │  Payment Service   │
-   │    :8081        │  │   :8082     │  │  Service  │  │  │      :8084         │
-   │ JWT · RBAC      │  │Saga Orchestr│  │   :8083   │  │  │  Payment Gateway   │
-   └─────────────────┘  └──────┬──────┘  └─────┬─────┘  │  └──────────┬─────────┘
-                                │               │         │             │
-                    ┌───────────▼───────────────▼─────────▼─────────────▼──────────┐
-                    │                       APACHE KAFKA                            │
-                    │   order.placed  │  inventory.response  │  payment.response    │
-                    │   order.status.update  │  *.DLT  (Dead Letter Topics)         │
-                    └───────────┬──────────────────────────────────────┬────────────┘
-                                │                                      │
-                   ┌────────────▼──────────────┐      ┌───────────────▼──────────────┐
-                   │   Notification Service     │      │   DLQ Intelligence Service   │
-                   │         :8085              │      │           :8086              │
-                   │  Email · SMS · Alerts      │      │  Spring AI + OpenAI GPT      │
-                   └────────────────────────────┘      │  Root-cause · Text-to-SQL    │
-                                                       └──────────────────────────────┘
-```
+![OrderNexus System Architecture](docs/architecture.svg)
+
+The platform follows a layered architecture where all external traffic enters through the API Gateway, business logic lives in independent Spring Boot services, and all inter-service communication flows exclusively through Apache Kafka.
+
+<details>
+<summary>View Kafka event flow diagram</summary>
+<br/>
+
+![Kafka Event Flow](docs/kafka-event-flow.svg)
+
+</details>
 
 ### Key architectural principles
 
@@ -85,9 +67,9 @@ Key design goals
 | Domain-driven microservices | Each service owns its bounded context and database schema |
 | Event-driven communication | All inter-service communication via Kafka — zero HTTP calls between services |
 | Database per service | 6 isolated MySQL schemas — no shared tables, no cross-schema JOINs |
-| Saga pattern (choreography) | Order flow coordinated by events, not an orchestrator |
+| Saga pattern (choreography) | Order flow coordinated by Kafka events, not a central orchestrator |
 | Fault tolerance | `@RetryableTopic` with exponential backoff + Dead Letter Topics on every consumer |
-| Stateless APIs | JWT in every request — no server-side sessions |
+| Stateless APIs | JWT in every request — no server-side sessions ever created |
 | Java 21 Virtual Threads | `spring.threads.virtual.enabled=true` across all services |
 
 ---
@@ -138,22 +120,15 @@ Key design goals
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/YOUR_USERNAME/orderflow.git
-cd orderflow
+git clone https://github.com/YOUR_USERNAME/ordernexus.git
+cd ordernexus
 
 # 2. Set your environment variables
 cp .env.example .env
-# Edit .env and add your OpenAI API key:
-#   OPENAI_API_KEY=sk-your-key-here
+# Edit .env and set: OPENAI_API_KEY=sk-your-key-here
 
-# 3. Start everything
+# 3. Start everything with one command
 ./start.sh
-
-# 4. Verify all services are healthy
-for port in 8080 8081 8082 8083 8084 8085 8086; do
-  echo -n "Port $port: "
-  curl -s http://localhost:$port/actuator/health | python3 -c     "import sys,json; d=json.load(sys.stdin); print(d.get('status','?'))"
-done
 ```
 
 ### Option B — Local IDE (IntelliJ / VS Code)
@@ -162,19 +137,29 @@ done
 # 1. Start only infrastructure via Docker
 docker-compose up -d mysql zookeeper kafka kafka-ui
 
-# 2. Open project in IntelliJ → Load Maven Projects when prompted
+# 2. Open project in IntelliJ → click "Load Maven Projects" when prompted
 
-# 3. Run each Application.java in this order:
-#    UserServiceApplication       → :8081
-#    InventoryServiceApplication  → :8083
-#    PaymentServiceApplication    → :8084
+# 3. Run each Application.java in this exact order:
+#    UserServiceApplication         → :8081
+#    InventoryServiceApplication    → :8083
+#    PaymentServiceApplication      → :8084
 #    NotificationServiceApplication → :8085
-#    OrderServiceApplication      → :8082
+#    OrderServiceApplication        → :8082
 #    DlqIntelligenceServiceApplication → :8086
-#    ApiGatewayApplication        → :8080
+#    ApiGatewayApplication          → :8080
 ```
 
-### Useful URLs after startup
+### Verify everything is running
+
+```bash
+# Health check all 7 services
+for port in 8080 8081 8082 8083 8084 8085 8086; do
+  echo -n "Port $port: "
+  curl -s http://localhost:$port/actuator/health     | python3 -c "import sys,json; print(json.load(sys.stdin).get('status','?'))"
+done
+```
+
+### Useful URLs
 
 | Resource | URL |
 |---|---|
@@ -194,41 +179,43 @@ docker-compose up -d mysql zookeeper kafka kafka-ui
 ### Authentication
 
 ```bash
-# Register a new user
-POST http://localhost:8081/api/v1/auth/register
-{
-  "username": "john_doe",
-  "email": "john@example.com",
-  "password": "Password@123",
-  "role": "CUSTOMER"          # CUSTOMER | ADMIN | INVENTORY_MANAGER | PAYMENT_PROCESSOR
-}
+# Register — choose role: CUSTOMER | ADMIN | INVENTORY_MANAGER | PAYMENT_PROCESSOR
+curl -X POST http://localhost:8081/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"john","email":"john@example.com","password":"Password@123","role":"CUSTOMER"}'
 
 # Login — returns accessToken (24h) and refreshToken (7d)
-POST http://localhost:8081/api/v1/auth/login
-{
-  "username": "john_doe",
-  "password": "Password@123"
-}
+curl -X POST http://localhost:8081/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"john","password":"Password@123"}'
 ```
 
 Save your token as a shell variable for convenience:
 
 ```bash
-TOKEN=$(curl -s -X POST http://localhost:8081/api/v1/auth/login   -H "Content-Type: application/json"   -d '{"username":"john_doe","password":"Password@123"}'   | python3 -c "import sys,json; print(json.load(sys.stdin)['accessToken'])")
+TOKEN=$(curl -s -X POST http://localhost:8081/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"john","password":"Password@123"}' \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['accessToken'])")
 ```
 
 ### Orders
 
 ```bash
-# Place a new order
-POST   /api/v1/orders                    # CUSTOMER or ADMIN
-GET    /api/v1/orders/{orderNumber}      # any authenticated user
-GET    /api/v1/orders/customer/{id}      # CUSTOMER or ADMIN
-GET    /api/v1/orders                    # ADMIN only
+POST   /api/v1/orders                     # CUSTOMER or ADMIN — triggers Kafka saga
+GET    /api/v1/orders/{orderNumber}       # any authenticated user
+GET    /api/v1/orders/customer/{id}       # CUSTOMER or ADMIN
+GET    /api/v1/orders                     # ADMIN only
 PATCH  /api/v1/orders/{orderNumber}/cancel
+```
 
-# Example
-curl -X POST http://localhost:8082/api/v1/orders   -H "Authorization: Bearer $TOKEN"   -H "Content-Type: application/json"   -d '{
+**Example — place an order:**
+
+```bash
+curl -X POST http://localhost:8082/api/v1/orders \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
     "items": [{"productId":1,"productName":"MacBook Pro","quantity":1,"unitPrice":2499.99}],
     "shippingAddress": "123 Main St, Chennai"
   }'
@@ -243,31 +230,48 @@ GET    /api/v1/inventory/products/{id}         # any authenticated user
 PATCH  /api/v1/inventory/products/{id}/stock   # ADMIN or INVENTORY_MANAGER
 ```
 
+### Payments
+
+```bash
+GET    /api/v1/payments                        # ADMIN only
+GET    /api/v1/payments/order/{orderNumber}    # any authenticated user
+```
+
+### Notifications
+
+```bash
+GET    /api/v1/notifications                        # ADMIN only
+GET    /api/v1/notifications/order/{orderNumber}    # any authenticated user
+GET    /api/v1/notifications/customer/{id}          # any authenticated user
+```
+
 ### AI Observability
 
 ```bash
-# Natural language → SQL → live results
+# Natural language → SQL → live results from MySQL
 POST   /api/v1/ai/query
 {"query": "Show failed payments today"}
 {"query": "Which products have less than 10 items in stock?"}
 {"query": "Top 5 customers by total order value"}
+{"query": "Show DLQ failures that have not been analyzed yet"}
 
-# Ad-hoc error analysis
+# Ad-hoc error analysis (no DLQ required)
 POST   /api/v1/ai/analyze-error
 {"exceptionMessage": "...", "stackTrace": "...", "payload": "..."}
 
-# DLQ failure records with AI root-cause analysis
+# DLQ failure records with AI root-cause
 GET    /api/v1/dlq
 GET    /api/v1/dlq/recent
 GET    /api/v1/dlq/{id}
 POST   /api/v1/dlq/{id}/reanalyze
+POST   /api/v1/dlq/analyze-pending
 ```
 
 ---
 
 ## Kafka Event Flow
 
-The order processing saga is choreographed entirely through Kafka events — no service calls another service directly.
+The order processing saga is choreographed entirely through Kafka events. No service calls another service directly over HTTP.
 
 ```
 Customer places order
@@ -277,32 +281,32 @@ Customer places order
                                          │
                         ┌────────────────┼────────────────┐
                         ▼                ▼                ▼
-               inventory-service   payment-service  notification-service
-               (reserve stock)     (charge card)    (order confirmation)
-                        │                │
-                        ▼                ▼
-               [inventory.response]  [payment.response]
-                        │                │
-                        └────────┬───────┘
-                                 ▼
-                           order-service
-                        (update order status)
-                                 │
-                                 ▼
-                        [order.status.update]
-                                 │
-                                 ▼
-                       notification-service
-                       (status change alert)
+               inventory-service   notification-service  payment-service
+               (reserve stock)     (order confirmation)  (charge customer)
+                        │                                  │
+                        ▼                                  ▼
+               [inventory.response]              [payment.response]
+                        │                                  │
+                        └──────────────┬───────────────────┘
+                                       ▼
+                                 order-service
+                              (update order status)
+                                       │
+                                       ▼
+                             [order.status.update]
+                                       │
+                                       ▼
+                             notification-service
+                             (status change alert)
 
   On consumer failure (after 3 retries with exponential backoff):
         any-service  ──►  [topic.DLT]  ──►  dlq-intelligence-service
-                                            (Spring AI root-cause analysis)
+                                            (Spring AI root-cause + fix)
 ```
 
 ### Topic ownership
 
-| Topic | Owner (produces) | Consumers |
+| Topic | Owned by | Consumed by |
 |---|---|---|
 | `order.placed` | order-service | inventory-service, payment-service, notification-service |
 | `order.status.update` | order-service | notification-service |
@@ -318,27 +322,26 @@ The `dlq-intelligence-service` provides two AI-powered capabilities built with *
 
 ### 1. Automated DLQ failure analysis
 
-When any Kafka consumer fails after all retries are exhausted, the message is automatically routed to a Dead Letter Topic (`*.DLT`). The DLQ service captures every failure and calls the OpenAI API to generate:
-
-- **Root cause** — a concise 2-3 sentence explanation of why the failure occurred
-- **Suggested fix** — 3-5 specific actionable steps to resolve it
-- **Prevention** — steps to stop it from happening again
+When any Kafka consumer fails after all retries are exhausted, the message is automatically routed to a Dead Letter Topic (`*.DLT`). The DLQ service captures every failure and calls the OpenAI API to generate a structured analysis:
 
 ```json
 {
   "topic": "order.placed.DLT",
   "exceptionClass": "ProductNotFoundException",
   "aiRootCauseSummary": "The inventory reservation failed because the product ID
-    referenced in the order does not exist in the inventory database...",
+    referenced in the order does not exist in the inventory database. This is
+    likely a race condition where the order was placed before the product
+    catalogue was synced.",
   "aiSuggestedFix": "1. Add product existence validation in order-service before
-    publishing ORDER_PLACED event\n2. Implement compensating transaction...",
+    publishing ORDER_PLACED\n2. Implement compensating transaction to cancel
+    the order if inventory returns NOT_FOUND\n3. Add circuit breaker pattern...",
   "analysisStatus": "COMPLETED"
 }
 ```
 
 ### 2. Text-to-SQL natural language queries
 
-Ask questions in plain English — the AI generates the SQL, executes it against live MySQL data, and returns the results.
+Ask questions in plain English — the AI generates the SQL, executes it against live MySQL data, and returns the results with full transparency.
 
 ```bash
 POST /api/v1/ai/query
@@ -349,7 +352,7 @@ POST /api/v1/ai/query
   "naturalLanguageQuery": "Show failed payments today",
   "generatedSql": "SELECT * FROM paymentdb.payments WHERE status = 'FAILED'
                    AND DATE(created_at) = CURDATE() ORDER BY created_at DESC LIMIT 100;",
-  "explanation": "Retrieves all failed payment records from today.",
+  "explanation": "Retrieves all failed payment records from today, ordered by most recent.",
   "results": [...],
   "rowCount": 3,
   "executionTimeMs": 42,
@@ -366,16 +369,16 @@ All APIs are secured with **stateless JWT authentication** and **role-based auth
 ### Authentication flow
 
 ```
-Client  ──POST /auth/login──►  user-service  ──►  returns JWT (HS256, 24h)
+Client  ──POST /auth/login──►  user-service  ──►  JWT (HS256, 24h expiry)
   │
-  └──►  All subsequent requests include:
+  └──►  All subsequent requests:
         Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
                                 │
                          API Gateway validates JWT
-                         Injects X-Auth-Username header
+                         Injects X-Auth-Username + X-Auth-Roles headers
                                 │
-                         Downstream service reads roles from JWT
-                         @PreAuthorize enforces method-level access
+                         Downstream service reads roles from JWT claims
+                         @PreAuthorize enforces method-level access control
 ```
 
 ### Roles and permissions
@@ -387,73 +390,63 @@ Client  ──POST /auth/login──►  user-service  ──►  returns JWT (H
 | `INVENTORY_MANAGER` | Add/edit products · Update stock levels |
 | `PAYMENT_PROCESSOR` | View payment records |
 
-### Security features
+### Security features implemented
 
 - Passwords hashed with **BCrypt** (strength 10) — never stored in plain text
 - JWT signed with **HS256** — secret loaded from environment variable `JWT_SECRET`
 - Access tokens expire after **24 hours**, refresh tokens after **7 days**
 - CSRF disabled — correct for stateless token-based APIs
-- `SessionCreationPolicy.STATELESS` — no server-side sessions
+- `SessionCreationPolicy.STATELESS` — no `HttpSession` ever created
 - `@EnableMethodSecurity` — `@PreAuthorize` enforced on every controller method
-- Username enumeration prevented — `UsernameNotFoundException` converted to `BadCredentialsException`
+- Username enumeration prevented — `UsernameNotFoundException` mapped to `BadCredentialsException`
+- Auto-generated Spring Security password disabled via `spring.security.user.name=disabled`
 
 ---
 
 ## Project Structure
 
 ```
-orderflow/
-├── docker-compose.yml              # Full stack orchestration with health checks
-├── init-db.sql                     # Creates all 6 MySQL databases + grants
-├── start.sh / stop.sh              # One-command startup scripts
-├── reset-kafka-topics.sh           # Fixes Kafka partition mismatch on fresh runs
-├── .env.example                    # Environment variable template (safe to commit)
+ordernexus/
+├── docker-compose.yml                  # Full stack with health checks + resource limits
+├── init-db.sql                         # Creates all 6 MySQL databases + grants
+├── start.sh / stop.sh                  # One-command startup scripts
+├── reset-kafka-topics.sh               # Fixes partition mismatch on fresh runs
+├── .env.example                        # Environment variable template
 ├── .gitignore
+├── docs/
+│   ├── architecture.svg                # System architecture diagram
+│   └── kafka-event-flow.svg            # Kafka saga event flow diagram
 │
-├── api-gateway/                    # Spring Cloud Gateway + JWT filter
-│   ├── src/main/java/com/orderflow/gateway/
-│   │   ├── ApiGatewayApplication.java
-│   │   └── JwtGatewayFilter.java
-│   └── src/main/resources/application.yml
-│
-├── user-service/                   # Auth, JWT issuance, RBAC
+├── api-gateway/                        # Spring Cloud Gateway + JWT filter
+├── user-service/                       # Auth, JWT issuance, RBAC
 │   └── src/main/java/com/orderflow/user/
-│       ├── config/       SecurityConfig.java · OpenApiConfig.java
-│       ├── controller/   AuthController.java
-│       ├── dto/          AuthDtos.java
-│       ├── entity/       User.java · Role.java
-│       ├── exception/    GlobalExceptionHandler.java
-│       ├── repository/   UserRepository.java
-│       ├── security/     JwtUtil.java · JwtAuthenticationFilter.java
-│       └── service/      AuthService.java · UserDetailsServiceImpl.java
+│       ├── config/     SecurityConfig · OpenApiConfig
+│       ├── controller/ AuthController
+│       ├── entity/     User · Role
+│       ├── exception/  GlobalExceptionHandler
+│       ├── security/   JwtUtil · JwtAuthenticationFilter
+│       └── service/    AuthService · UserDetailsServiceImpl
 │
-├── order-service/                  # Saga orchestrator
+├── order-service/                      # Saga orchestrator
 │   └── src/main/java/com/orderflow/order/
-│       ├── config/       SecurityConfig.java · KafkaConfig.java · KafkaProducerConfig.java · KafkaConsumerConfig.java
-│       ├── controller/   OrderController.java
-│       ├── dto/          OrderDtos.java
-│       ├── entity/       Order.java · OrderItem.java · OrderStatus.java
-│       ├── event/        OrderPlacedEvent.java · OrderStatusUpdateEvent.java · InventoryResponseEvent.java · PaymentResponseEvent.java
-│       ├── exception/    GlobalExceptionHandler.java
-│       ├── kafka/        OrderEventProducer.java · OrderEventConsumer.java
-│       ├── repository/   OrderRepository.java
-│       ├── security/     JwtAuthenticationFilter.java
-│       └── service/      OrderService.java
+│       ├── config/     SecurityConfig · KafkaConfig · KafkaProducerConfig · KafkaConsumerConfig
+│       ├── controller/ OrderController
+│       ├── entity/     Order · OrderItem · OrderStatus
+│       ├── event/      OrderPlacedEvent · OrderStatusUpdateEvent · InventoryResponseEvent · PaymentResponseEvent
+│       ├── kafka/      OrderEventProducer · OrderEventConsumer
+│       └── service/    OrderService
 │
-├── inventory-service/              # Stock reservation
-├── payment-service/                # Payment processing
-├── notification-service/           # Event-driven alerts
+├── inventory-service/                  # Stock reservation
+├── payment-service/                    # Payment processing
+├── notification-service/               # Event-driven alerts
 │
-└── dlq-intelligence-service/       # Spring AI failure analysis
+└── dlq-intelligence-service/           # Spring AI failure analysis
     └── src/main/java/com/orderflow/dlq/
-        ├── config/       SecurityConfig.java · AiConfig.java · KafkaConfig.java · AsyncConfig.java
-        ├── controller/   DlqController.java · AiQueryController.java
-        ├── dto/          DlqFailureDto.java · NaturalLanguageQueryDto.java
-        ├── entity/       DlqFailureRecord.java · AnalysisStatus.java
-        ├── kafka/        DlqEventConsumer.java
-        ├── repository/   DlqFailureRecordRepository.java
-        ├── security/     JwtAuthenticationFilter.java
-        └── service/      AiAnalysisService.java · TextToSqlService.java
+        ├── config/     SecurityConfig · AiConfig · AsyncConfig
+        ├── controller/ DlqController · AiQueryController
+        ├── entity/     DlqFailureRecord · AnalysisStatus
+        ├── kafka/      DlqEventConsumer
+        └── service/    AiAnalysisService · TextToSqlService
 ```
 
 ---
@@ -468,26 +461,26 @@ orderflow/
 | `MYSQL_USER` | MySQL application username | Yes |
 | `MYSQL_PASSWORD` | MySQL application password | Yes |
 
+Copy `.env.example` to `.env` and fill in all values. The `.env` file is excluded from Git via `.gitignore`.
+
 Generate a strong JWT secret:
 
 ```bash
 openssl rand -base64 32 | tr -d '\n' | base64
 ```
 
-Copy `.env.example` to `.env` and fill in all values. The `.env` file is excluded from Git via `.gitignore` — never commit it.
-
 ---
 
 ## Running Tests
 
 ```bash
-# Run all tests
+# All tests
 mvn test
 
-# Run tests for a specific service
+# Specific service
 cd order-service && mvn test
 
-# Run with coverage report
+# With coverage report
 mvn test jacoco:report
 ```
 
@@ -501,6 +494,6 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 <div align="center">
 
-Built with Java 21 · Spring Boot 3.5 · Apache Kafka · Spring AI
+Built with Java 21 · Spring Boot 3.5 · Apache Kafka · Spring AI 1.0
 
 </div>
